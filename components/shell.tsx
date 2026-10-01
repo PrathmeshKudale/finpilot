@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard, ArrowLeftRight, Wallet, Landmark, Target, Sparkles,
-  Calculator, Tag, Bell, RotateCcw, Croissant, Landmark as BankIcon,
+  Calculator, Tag, RotateCcw, Croissant, Landmark as BankIcon,
 } from "lucide-react";
 import { useFin } from "@/lib/store";
-import { alertsFor } from "@/lib/alert-helper";
 import { cn } from "./ui";
 
 const NAV = [
@@ -25,34 +24,10 @@ const NAV = [
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { onboarded, bank, transactions, budgets, alertsSeen, markAlertsSeen, resetDemo } = useFin();
+  const { onboarded, bank, resetDemo } = useFin();
   const [mounted, setMounted] = useState(false);
-  const [bellOpen, setBellOpen] = useState(false);
-  const [toasts, setToasts] = useState<{ id: string; kind: string; msg: string }[]>([]);
 
   useEffect(() => setMounted(true), []);
-
-  const alerts = useMemo(
-    () => (mounted && onboarded ? alertsFor(transactions, budgets) : []),
-    [mounted, onboarded, transactions, budgets]
-  );
-  const unseen = alerts.filter((a) => !alertsSeen.includes(a.id));
-  const criticalCount = alerts.filter((a) => a.kind === "critical").length;
-
-  // Fire toast + nav badge when a budget crosses 80% / 100%.
-  useEffect(() => {
-    if (!mounted) return;
-    const fresh = alerts.filter((a) => !alertsSeen.includes(a.id));
-    if (!fresh.length) return;
-    const t = fresh.map((a) => ({ id: a.id, kind: a.kind, msg: a.message }));
-    setToasts((prev) => [...prev, ...t]);
-    markAlertsSeen(alerts.map((a) => a.id));
-    const timer = setTimeout(
-      () => setToasts((prev) => prev.filter((x) => !fresh.some((f) => f.id === x.id))),
-      6500
-    );
-    return () => clearTimeout(timer);
-  }, [alerts, alertsSeen, markAlertsSeen, mounted]);
 
   if (!mounted) {
     return <div className="min-h-screen bg-slate-50" />;
@@ -76,44 +51,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <span className="hidden items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 sm:inline-flex">
               <BankIcon size={13} /> {bank || "Demo bank"} · connected
             </span>
-            <div className="relative">
-              <button
-                onClick={() => setBellOpen((v) => !v)}
-                className="relative grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50"
-                aria-label="Notifications"
-              >
-                <Bell size={16} />
-                {unseen.length > 0 && (
-                  <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
-                    {unseen.length}
-                  </span>
-                )}
-              </button>
-              <AnimatePresence>
-                {bellOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
-                    className="absolute right-0 mt-2 w-80 rounded-2xl border border-slate-200 bg-white p-3 shadow-soft"
-                  >
-                    <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-mute">Alerts</p>
-                    {alerts.length === 0 ? (
-                      <p className="px-1 py-4 text-center text-xs text-mute">All budgets on track. Nice!</p>
-                    ) : (
-                      <ul className="max-h-64 space-y-1 overflow-auto">
-                        {alerts.map((a) => (
-                          <li key={a.id} className={cn(
-                            "rounded-xl px-3 py-2 text-xs",
-                            a.kind === "critical" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-700"
-                          )}>
-                            {a.message}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
             <button
               onClick={() => { if (window.confirm("Reset all demo data and restart onboarding?")) resetDemo(); }}
               className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-mute hover:bg-slate-50"
@@ -141,11 +78,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 >
                   <Icon size={16} />
                   {n.label}
-                  {n.href === "/budgets" && criticalCount > 0 && (
-                    <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white">
-                      {criticalCount}
-                    </span>
-                  )}
                 </Link>
               );
             })}
@@ -173,22 +105,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
         })}
       </nav>
 
-      <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-80 flex-col gap-2">
-        <AnimatePresence>
-          {toasts.map((t) => (
-            <motion.div
-              key={t.id}
-              initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 40 }}
-              className={cn(
-                "pointer-events-auto rounded-2xl border p-3 text-xs font-medium shadow-soft",
-                t.kind === "critical" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-amber-200 bg-amber-50 text-amber-700"
-              )}
-            >
-              {t.msg}
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
     </div>
   );
 }
