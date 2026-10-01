@@ -61,6 +61,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <BankIcon size={13} /> {bank || "Demo bank"} · connected
             </span>
             <button
+              onClick={() => {
+                if (unseen.length > 0) {
+                  markAlertsSeen(unseen.map((a) => a.id));
+                }
+              }}
               className="relative grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50"
               aria-label="Notifications"
               type="button"
