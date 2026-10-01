@@ -32,6 +32,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const isOnboardingRoute = pathname === "/onboarding" || pathname.startsWith("/onboarding");
 
   useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setBellOpen(false);
+  }, [pathname]);
 
   const alerts = useMemo(
     () => (mounted && onboarded && !isOnboardingRoute ? alertsFor(transactions, budgets) : []),
