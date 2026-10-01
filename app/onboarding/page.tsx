@@ -19,12 +19,20 @@ const SYNC_STEPS = [
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const onboarded = useFin((s) => s.onboarded);
   const completeOnboarding = useFin((s) => s.completeOnboarding);
   const [step, setStep] = useState(0); // 0 landing, 1 bank, 2 consent, 3 otp, 4 sync
   const [bank, setBank] = useState(BANKS[0]);
   const [otp, setOtp] = useState("");
   const [otpError, setOtpError] = useState(false);
   const [syncPct, setSyncPct] = useState(0);
+
+  useEffect(() => {
+    if (onboarded) {
+      router.replace("/dashboard");
+      return;
+    }
+  }, [onboarded, router]);
 
   useEffect(() => {
     if (step !== 4) return;
